@@ -1,0 +1,78 @@
+@echo off
+
+REM Check if a command line parameter is passed,if not,prompt the user for source and destination folders
+if "%~1"=="" (
+    set /p source="Please enter the source folder: "
+    set /p destination="Please enter the destination folder: "
+) else (
+   set listfile=%1
+)
+
+REM Check if more than one parameter entered
+if not "%2"=="" (
+   echo Too many parameter entered.
+   goto end
+)
+
+REM Read the text file for source and destination folders
+if not "%listfile%"=="" (
+  if not exist "%listfile%" (
+    echo The specified list of file does not exists.
+     goto end
+  )
+
+  for /f "usebackq tokens=1,2" %%a in (%listfile%) do (
+     set source=%%a
+     set destination=%%b
+     call :CopyFiles
+  )
+) else (
+    call :CopyFiles
+)
+
+goto :end
+
+:CopyFiles
+REM Check if the source folder exists or not if not, exit 
+if not exist "%source%" (
+    echo The source folder %source% does not exists
+    exit /b
+)
+
+REM Check if the destination folder exists or not
+ if exist "%destination%" (
+   set /p overwrite="The destination folder %destination% already exists. Do you want to overwrite it?(y/n)"
+    if /i "%overwrite%"=="n" (
+        echo Copy task cancelled.
+        pause
+
+        exit /b     
+   )
+) else (
+   md "%destination%" >nul1 2>&1
+   if errorlevel 1 (
+      echo Failed to create destination folder %destination%.
+      pause
+      exit /b
+
+    )    
+)
+
+REM Copy the contents of the source folder to destination folder
+
+echo Copying %source% to %destination%...
+xcopy /s /e /i /h /k /y "%source%\*" "%destination%"
+
+if %errorlevel% neq 0 (
+   echo Copy task failed for %source% to %destination%.
+   pause
+) else (
+   echo Copy task completed for %source% to %destination%
+   pause
+)  
+
+
+exit /b
+
+
+:end
